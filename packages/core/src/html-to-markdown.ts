@@ -1,6 +1,8 @@
+import { parseHTML } from "linkedom";
+
 export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = {}): string {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const { document } = parseHTML(html);
+    // const doc = parser.parseFromString(html, "text/html");
     const lines: string[] = [];
 
     function escapeMarkdown(text: string): string {
@@ -20,9 +22,7 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
 
         const el = node as HTMLElement;
         const tag = el.tagName.toLowerCase();
-        const content = Array.from(el.childNodes)
-            .map((child) => walk(child, depth))
-            .join("");
+        const content = walkChildren(el, depth);
 
         switch (tag) {
             case "h1":
@@ -54,14 +54,16 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
             case "strike":
                 return `~~${content}~~`;
 
-            case "a":
+            case "a": {
                 const href = el.getAttribute("href");
                 return href ? `[${content}](${href})` : content;
+            }
 
-            case "img":
+            case "img": {
                 const alt = el.getAttribute("alt") || "";
                 const src = el.getAttribute("src") || "";
                 return `![${alt}](${src})`;
+            }
 
             case "ul":
                 return Array.from(el.children)
@@ -90,28 +92,33 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
                         .join("\n") + "\n"
                 );
 
-            case "pre":
-                const code = el.textContent || "";
+            case "pre": {
+                const codeEl = el.querySelector("code");
+                const code = codeEl ? codeEl.textContent || "" : el.textContent || "";
                 return `\n\`\`\`\n${code.trim()}\n\`\`\`\n`;
+            }
 
             case "br":
                 return "  \n";
 
             case "p":
-                return `${content}\n`;
+                return `${content.trim()}\n\n`;
 
             case "table":
                 return walkTable(el);
 
             case "span":
-                return content; // No extra formatting
-
-            case "a":
-                return el.getAttribute("name") ? "" : content;
+                return content;
 
             default:
                 return options.allowHtml ? el.outerHTML : content;
         }
+    }
+
+    function walkChildren(el: Element, depth: number): string {
+        return Array.from(el.childNodes)
+            .map((child) => walk(child, depth))
+            .join("");
     }
 
     function walkListItem(li: Node, prefix: string, indent: number): string {
@@ -148,10 +155,17 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
         return `${header}\n${body}\n`;
     }
 
-    for (const child of Array.from(doc.body.childNodes)) {
+    for (const child of Array.from(document.body.childNodes)) {
         const line = walk(child).trim();
         if (line) lines.push(line);
     }
 
-    return lines.join("\n\n").trim();
+    return lines.join("\n");
+
+    // for (const child of Array.from(doc.body.childNodes)) {
+    //     const line = walk(child).trim();
+    //     if (line) lines.push(line);
+    // }
+
+    // return lines.join("\n\n").trim();
 }
