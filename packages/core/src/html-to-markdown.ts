@@ -113,8 +113,11 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
             case "br":
                 return "  \n";
 
-            case "p":
-                return `${content.trim()}\n\n`;
+            case "p": {
+                const text = content.trim();
+                if (text.includes("\n")) return `${text}\n\n`; // true block
+                return `${text} `; // inline style
+            }
 
             case "table":
                 return walkTable(el);
@@ -167,12 +170,21 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
         return `${header}\n${body}\n`;
     }
 
-    for (const child of Array.from(document.body.childNodes)) {
-        const line = walk(child).trim();
-        if (line) lines.push(line);
-    }
+    return Array.from(document.body.childNodes)
+        .map((child) => walk(child))
+        .join("")
+        .trim();
 
-    return lines.join("\n");
+    // --- version 2 ---
+
+    // for (const child of Array.from(document.body.childNodes)) {
+    //     const line = walk(child).trim();
+    //     if (line) lines.push(line);
+    // }
+
+    // return lines.join("\n");
+
+    // --- version 1 ---
 
     // for (const child of Array.from(doc.body.childNodes)) {
     //     const line = walk(child).trim();
