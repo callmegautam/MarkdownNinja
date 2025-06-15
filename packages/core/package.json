@@ -1,13 +1,49 @@
 {
-  "name": "core",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Gautam Suthar <iamgautamsuthar@outlook.com> (https://github.com/callmegautam)",
-  "license": "ISC",
-  "packageManager": "pnpm@10.11.1"
+    "name": "markdownninja",
+    "version": "1.0.0",
+    "description": "A blazing-fast Markdown ↔ HTML conversion toolkit built for modern developers.",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "homepage": "https://github.com/callmegautam/markdownninja",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/callmegautam/markdownninja.git"
+    },
+    "bugs": {
+        "url": "https://github.com/callmegautam/markdownninja/issues"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "dev": "tsx --watch src/index.ts",
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "test": "vitest run"
+    },
+    "keywords": [
+        "markdown",
+        "html",
+        "markdown-to-html",
+        "html-to-markdown",
+        "converter",
+        "typescript",
+        "markdownninja"
+    ],
+    "author": "Gautam Suthar <iamgautamsuthar@outlook.com> (https://github.com/callmegautam)",
+    "license": "MIT",
+    "packageManager": "pnpm@10.11.1",
+    "devDependencies": {
+        "tsc-alias": "^1.8.16",
+        "tsx": "^4.19.4",
+        "typescript": "^5.4.5",
+        "vitest": "^1.5.0"
+    }
 }
