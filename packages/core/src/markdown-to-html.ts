@@ -1,4 +1,4 @@
-export function markdownToHtml(markdown: string, options: { allowHtml?: boolean } = {}): string {
+export function markdownToHtml(markdown: string, options: { allowHtml?: boolean } = { allowHtml: true }): string {
     const lines = markdown.split("\n");
     const html: string[] = [];
     let inCodeBlock = false;
