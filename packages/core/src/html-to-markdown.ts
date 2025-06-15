@@ -1,9 +1,21 @@
 import { parseHTML } from "linkedom";
 
 export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = {}): string {
-    const { document } = parseHTML(html);
+    const wrappedHtml = `<!DOCTYPE html><html><head></head><body>${html}</body></html>`;
+    const { document } = parseHTML(wrappedHtml);
+    if (!document.defaultView) {
+        throw new Error("No defaultView in document");
+    }
+    const Node = document.defaultView.Node;
+
     // const doc = parser.parseFromString(html, "text/html");
     const lines: string[] = [];
+
+    if (!document || !document.body) {
+        return "No content";
+    }
+
+    // console.log(document.body.childNodes.length);
 
     function escapeMarkdown(text: string): string {
         return text.replace(/\\/g, "\\\\").replace(/([*_`[\]~>])/g, "\\$1");
