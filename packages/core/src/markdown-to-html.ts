@@ -1,16 +1,24 @@
 // src/markdownToHtml.ts
 
-export function markdownToHtml(markdown: string): string {
+export function markdownToHtml(markdown: string, options: { allowHtml?: boolean } = {}): string {
     const lines = markdown.split("\n");
     const html: string[] = [];
     let inCodeBlock = false;
     let inList = false;
-    let listType: "ul" | "ol" | null = null;
+    let listStack: ("ul" | "ol")[] = [];
+
+    const closeLists = () => {
+        while (listStack.length > 0) {
+            const type = listStack.pop();
+            html.push(`</${type}>`);
+        }
+    };
 
     for (let line of lines) {
+        const originalLine = line;
         line = line.trim();
 
-        // Code Block Start/End (``` language optional)
+        // Code Block Start/End
         if (/^```/.test(line)) {
             inCodeBlock = !inCodeBlock;
             html.push(inCodeBlock ? "<pre><code>" : "</code></pre>");
@@ -24,6 +32,7 @@ export function markdownToHtml(markdown: string): string {
 
         // Horizontal Rule
         if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+            closeLists();
             html.push("<hr />");
             continue;
         }
@@ -31,6 +40,7 @@ export function markdownToHtml(markdown: string): string {
         // Headings with IDs
         const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
         if (headingMatch) {
+            closeLists();
             const level = headingMatch[1].length;
             const contentRaw = headingMatch[2];
             const content = parseInline(contentRaw);
@@ -45,54 +55,92 @@ export function markdownToHtml(markdown: string): string {
         // Blockquote
         const blockquoteMatch = line.match(/^>\s+(.*)/);
         if (blockquoteMatch) {
+            closeLists();
             html.push(`<blockquote>${parseInline(blockquoteMatch[1])}</blockquote>`);
             continue;
         }
 
+        // Table
+        if (/^\|(.+)\|$/.test(line)) {
+            const cells = line
+                .split("|")
+                .slice(1, -1)
+                .map((cell) => cell.trim());
+            const isHeader = lines[lines.indexOf(originalLine) + 1]?.match(/^\|([\s:-]+)\|$/);
+            if (isHeader) {
+                const headerHtml = `<thead><tr>${cells
+                    .map((cell) => `<th>${parseInline(cell)}</th>`)
+                    .join("")}</tr></thead>`;
+                const bodyRows: string[] = [];
+                let i = lines.indexOf(originalLine) + 2;
+                while (i < lines.length && /^\|(.+)\|$/.test(lines[i])) {
+                    const rowCells = lines[i]
+                        .split("|")
+                        .slice(1, -1)
+                        .map((c) => `<td>${parseInline(c.trim())}</td>`);
+                    bodyRows.push(`<tr>${rowCells.join("")}</tr>`);
+                    i++;
+                }
+                html.push(`<table>${headerHtml}<tbody>${bodyRows.join("")}</tbody></table>`);
+                continue;
+            }
+        }
+
         // Ordered List
-        const orderedListMatch = line.match(/^\d+\.\s+(.*)/);
+        const orderedListMatch = line.match(/^(\s*)(\d+)\.\s+(.*)/);
         if (orderedListMatch) {
-            if (!inList || listType !== "ol") {
-                if (inList) html.push(`</${listType}>`);
-                inList = true;
-                listType = "ol";
+            const indent = orderedListMatch[1].length / 2;
+            while (listStack.length > indent) html.push(`</${listStack.pop()}>`);
+            while (listStack.length < indent) {
+                listStack.push("ol");
                 html.push("<ol>");
             }
-            html.push(`<li>${parseInline(orderedListMatch[1])}</li>`);
+            if (listStack[listStack.length - 1] !== "ol") {
+                html.push(`</${listStack.pop()}>`);
+                listStack.push("ol");
+                html.push("<ol>");
+            }
+            html.push(`<li>${parseInline(orderedListMatch[3])}</li>`);
             continue;
         }
 
-        // Unordered List
-        const unorderedListMatch = line.match(/^[-*+]\s+(.*)/);
+        // Unordered List / Task List
+        const unorderedListMatch = line.match(/^(\s*)[-*+]\s+(.*)/);
         if (unorderedListMatch) {
-            if (!inList || listType !== "ul") {
-                if (inList) html.push(`</${listType}>`);
-                inList = true;
-                listType = "ul";
+            const indent = unorderedListMatch[1].length / 2;
+            while (listStack.length > indent) html.push(`</${listStack.pop()}>`);
+            while (listStack.length < indent) {
+                listStack.push("ul");
                 html.push("<ul>");
             }
-            html.push(`<li>${parseInline(unorderedListMatch[1])}</li>`);
+            if (listStack[listStack.length - 1] !== "ul") {
+                html.push(`</${listStack.pop()}>`);
+                listStack.push("ul");
+                html.push("<ul>");
+            }
+            let item = unorderedListMatch[2];
+            const taskMatch = item.match(/^\[( |x|X)\]\s+(.*)/);
+            if (taskMatch) {
+                const checked = taskMatch[1].toLowerCase() === "x";
+                html.push(
+                    `<li><input type="checkbox" disabled ${checked ? "checked" : ""} /> ${parseInline(
+                        taskMatch[2]
+                    )}</li>`
+                );
+            } else {
+                html.push(`<li>${parseInline(item)}</li>`);
+            }
             continue;
         }
 
-        // End list block if needed
-        if (inList) {
-            html.push(`</${listType}>`);
-            inList = false;
-            listType = null;
-        }
-
-        // Paragraph (if not empty)
+        // Line Breaks & Paragraphs
+        closeLists();
         if (line.trim() !== "") {
             html.push(`<p>${parseInline(line)}</p>`);
         }
     }
 
-    // Final closing list if any
-    if (inList) {
-        html.push(`</${listType}>`);
-    }
-
+    closeLists();
     return html.join("\n").trim();
 }
 
@@ -104,14 +152,19 @@ function parseInline(text: string): string {
         .replace(/\\`/g, "`")
         .replace(/\\\[/g, "[")
         .replace(/\\\]/g, "]")
-        .replace(/:\w+:/g, (match) => emojiMap[match.slice(1, -1)] || match) // Emojis
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
-        .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic
-        .replace(/~~(.*?)~~/g, "<del>$1</del>") // Strikethrough
-        .replace(/`([^`]+)`/g, "<code>$1</code>") // Inline code
-        .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />') // Images
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>') // Links
-        .replace(/(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>'); // URLs
+        .replace(/:\w+:/g, (match) => emojiMap[match.slice(1, -1)] || match)
+        .replace(/---/g, "—")
+        .replace(/--/g, "–")
+        .replace(/"([^"]*)"/g, "“$1”")
+        .replace(/\b'([^']*)'/g, "‘$1’")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+        .replace(/~~(.*?)~~/g, "<del>$1</del>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+        .replace(/(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>')
+        .replace(/  $/, "<br />");
 }
 
 function escapeHtml(text: string): string {
