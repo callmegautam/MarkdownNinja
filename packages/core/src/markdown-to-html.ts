@@ -134,8 +134,16 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
 
         // Line Breaks & Paragraphs
         closeLists();
+
         if (line.trim() !== "") {
-            html.push(`<p>${parseInline(line, options)}</p>`);
+            const trimmed = line.trim();
+
+            // If the entire line is a single inline code (e.g., `inline`)
+            if (/^`[^`]+`$/.test(trimmed)) {
+                html.push(parseInline(trimmed, options));
+            } else {
+                html.push(`<p>${parseInline(trimmed, options)}</p>`);
+            }
         }
     }
 
@@ -144,6 +152,10 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
 }
 
 function parseInline(text: string, options: { allowHtml?: boolean } = {}): string {
+    if (!options.allowHtml) {
+        text = escapeHtml(text);
+    }
+
     let processed = text
         .replace(/\\\*/g, "*")
         .replace(/\\_/g, "_")
@@ -156,18 +168,15 @@ function parseInline(text: string, options: { allowHtml?: boolean } = {}): strin
         .replace(/--/g, "–")
         .replace(/\"([^"]*)\"/g, "“$1”")
         .replace(/\b'([^']*)'/g, "‘$1’")
+        // First: Auto-link raw URLs not inside Markdown links
+        .replace(/(?<!["'(=])\b(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>')
+        .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         .replace(/\*(.*?)\*/g, "<em>$1</em>")
         .replace(/~~(.*?)~~/g, "<del>$1</del>")
         .replace(/`([^`]+)`/g, "<code>$1</code>")
-        .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-        .replace(/(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>')
         .replace(/  $/, "<br />");
-
-    if (!options.allowHtml) {
-        processed = escapeHtml(processed);
-    }
 
     return processed;
 }

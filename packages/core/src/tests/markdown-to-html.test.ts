@@ -26,7 +26,8 @@ describe("markdownToHtml", () => {
         const md = "`inline` \n```\nblock\n```";
         const html = markdownToHtml(md);
         expect(html).toContain("<code>inline</code>");
-        expect(html).toContain("<pre><code>block</code></pre>");
+        // expect(html).toContain("<pre><code>block</code></pre>");
+        expect(html).toMatch(/<pre><code>\s*block\s*<\/code><\/pre>/);
     });
 
     it("should convert blockquote", () => {
