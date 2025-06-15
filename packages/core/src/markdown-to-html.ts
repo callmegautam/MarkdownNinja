@@ -1,5 +1,3 @@
-// src/markdownToHtml.ts
-
 export function markdownToHtml(markdown: string, options: { allowHtml?: boolean } = {}): string {
     const lines = markdown.split("\n");
     const html: string[] = [];
@@ -43,7 +41,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             closeLists();
             const level = headingMatch[1].length;
             const contentRaw = headingMatch[2];
-            const content = parseInline(contentRaw);
+            const content = parseInline(contentRaw, options);
             const id = contentRaw
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, "-")
@@ -56,7 +54,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
         const blockquoteMatch = line.match(/^>\s+(.*)/);
         if (blockquoteMatch) {
             closeLists();
-            html.push(`<blockquote>${parseInline(blockquoteMatch[1])}</blockquote>`);
+            html.push(`<blockquote>${parseInline(blockquoteMatch[1], options)}</blockquote>`);
             continue;
         }
 
@@ -69,7 +67,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             const isHeader = lines[lines.indexOf(originalLine) + 1]?.match(/^\|([\s:-]+)\|$/);
             if (isHeader) {
                 const headerHtml = `<thead><tr>${cells
-                    .map((cell) => `<th>${parseInline(cell)}</th>`)
+                    .map((cell) => `<th>${parseInline(cell, options)}</th>`)
                     .join("")}</tr></thead>`;
                 const bodyRows: string[] = [];
                 let i = lines.indexOf(originalLine) + 2;
@@ -77,7 +75,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
                     const rowCells = lines[i]
                         .split("|")
                         .slice(1, -1)
-                        .map((c) => `<td>${parseInline(c.trim())}</td>`);
+                        .map((c) => `<td>${parseInline(c.trim(), options)}</td>`);
                     bodyRows.push(`<tr>${rowCells.join("")}</tr>`);
                     i++;
                 }
@@ -100,7 +98,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
                 listStack.push("ol");
                 html.push("<ol>");
             }
-            html.push(`<li>${parseInline(orderedListMatch[3])}</li>`);
+            html.push(`<li>${parseInline(orderedListMatch[3], options)}</li>`);
             continue;
         }
 
@@ -124,11 +122,12 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
                 const checked = taskMatch[1].toLowerCase() === "x";
                 html.push(
                     `<li><input type="checkbox" disabled ${checked ? "checked" : ""} /> ${parseInline(
-                        taskMatch[2]
+                        taskMatch[2],
+                        options
                     )}</li>`
                 );
             } else {
-                html.push(`<li>${parseInline(item)}</li>`);
+                html.push(`<li>${parseInline(item, options)}</li>`);
             }
             continue;
         }
@@ -136,7 +135,7 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
         // Line Breaks & Paragraphs
         closeLists();
         if (line.trim() !== "") {
-            html.push(`<p>${parseInline(line)}</p>`);
+            html.push(`<p>${parseInline(line, options)}</p>`);
         }
     }
 
@@ -144,8 +143,8 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
     return html.join("\n").trim();
 }
 
-function parseInline(text: string): string {
-    return text
+function parseInline(text: string, options: { allowHtml?: boolean } = {}): string {
+    let processed = text
         .replace(/\\\*/g, "*")
         .replace(/\\_/g, "_")
         .replace(/\\~/g, "~")
@@ -155,7 +154,7 @@ function parseInline(text: string): string {
         .replace(/:\w+:/g, (match) => emojiMap[match.slice(1, -1)] || match)
         .replace(/---/g, "—")
         .replace(/--/g, "–")
-        .replace(/"([^"]*)"/g, "“$1”")
+        .replace(/\"([^"]*)\"/g, "“$1”")
         .replace(/\b'([^']*)'/g, "‘$1’")
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         .replace(/\*(.*?)\*/g, "<em>$1</em>")
@@ -165,6 +164,12 @@ function parseInline(text: string): string {
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
         .replace(/(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>')
         .replace(/  $/, "<br />");
+
+    if (!options.allowHtml) {
+        processed = escapeHtml(processed);
+    }
+
+    return processed;
 }
 
 function escapeHtml(text: string): string {
@@ -178,5 +183,10 @@ const emojiMap: Record<string, string> = {
     fire: "🔥",
     star: "⭐",
     rocket: "🚀",
-    // Add more emojis as needed
+    check_mark: "✔️",
+    cross_mark: "❌",
+    wave: "👋",
+    clap: "👏",
+    ok_hand: "👌",
+    thumbs_down: "👎",
 };
