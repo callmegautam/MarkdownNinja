@@ -1,6 +1,0 @@
-```bash
-"dependencies": {
-  "@core": "*"
-}
-
-```
