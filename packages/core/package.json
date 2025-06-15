@@ -1,6 +1,6 @@
 {
     "name": "markdownninja",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "A blazing-fast Markdown ↔ HTML conversion toolkit built for modern developers.",
     "main": "./dist/index.js",
     "types": "./dist/types/index.d.ts",
