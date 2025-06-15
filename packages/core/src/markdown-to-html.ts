@@ -28,12 +28,17 @@ export function markdownToHtml(markdown: string): string {
             continue;
         }
 
-        // Headings
+        // Headings with IDs
         const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
         if (headingMatch) {
             const level = headingMatch[1].length;
-            const content = parseInline(headingMatch[2]);
-            html.push(`<h${level}>${content}</h${level}>`);
+            const contentRaw = headingMatch[2];
+            const content = parseInline(contentRaw);
+            const id = contentRaw
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+            html.push(`<h${level} id="${id}">${content}</h${level}>`);
             continue;
         }
 
@@ -93,13 +98,32 @@ export function markdownToHtml(markdown: string): string {
 
 function parseInline(text: string): string {
     return text
+        .replace(/\\\*/g, "*")
+        .replace(/\\_/g, "_")
+        .replace(/\\~/g, "~")
+        .replace(/\\`/g, "`")
+        .replace(/\\\[/g, "[")
+        .replace(/\\\]/g, "]")
+        .replace(/:\w+:/g, (match) => emojiMap[match.slice(1, -1)] || match) // Emojis
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
+        .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic
+        .replace(/~~(.*?)~~/g, "<del>$1</del>") // Strikethrough
+        .replace(/`([^`]+)`/g, "<code>$1</code>") // Inline code
         .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />') // Images
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>') // Links
-        .replace(/`([^`]+)`/g, "<code>$1</code>") // Inline code
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
-        .replace(/\*(.*?)\*/g, "<em>$1</em>"); // Italic
+        .replace(/(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>'); // URLs
 }
 
 function escapeHtml(text: string): string {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+
+const emojiMap: Record<string, string> = {
+    smile: "😄",
+    heart: "❤️",
+    thumbs_up: "👍",
+    fire: "🔥",
+    star: "⭐",
+    rocket: "🚀",
+    // Add more emojis as needed
+};
