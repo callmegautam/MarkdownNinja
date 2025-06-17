@@ -2,9 +2,9 @@
     "name": "markdownninja-cli",
     "version": "0.1.0",
     "description": "",
-    "main": "./dist/bin/ninja.js",
+    "main": "./dist/ninja.js",
     "bin": {
-        "ninja": "./dist/bin/ninja.js"
+        "ninja": "/dist/ninja.js"
     },
     "homepage": "https://github.com/callmegautam/markdownninja",
     "repository": {
@@ -19,7 +19,7 @@
     ],
     "scripts": {
         "dev": "tsx ./bin/ninja.ts",
-        "build": "tsc",
+        "build": "tsup",
         "clean": "rm -rf dist",
         "test": "vitest run",
         "test:watch": "vitest watch"
@@ -35,6 +35,7 @@
     "devDependencies": {
         "@types/node": "^20.11.6",
         "tsc-alias": "^1.8.0",
+        "tsup": "^8.5.0",
         "tsx": "^4.2.0",
         "typescript": "^5.3.3",
         "vitest": "^1.0.0-rc.28"
