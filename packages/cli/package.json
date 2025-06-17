@@ -3,11 +3,40 @@
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
+    "bin": {
+        "ninja": "./bin/ninja.js"
+    },
+    "homepage": "https://github.com/callmegautam/markdownninja",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/callmegautam/markdownninja.git"
+    },
+    "bugs": {
+        "url": "https://github.com/callmegautam/markdownninja/issues"
+    },
+    "files": [
+        "dist"
+    ],
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "dev": "tsx --watch ./bin/ninja.ts",
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "test": "vitest run",
+        "test:watch": "vitest watch"
     },
     "keywords": [],
     "author": "Gautam Suthar <iamgautamsuthar@outlook.com> (https://github.com/callmegautam)",
     "license": "ISC",
-    "packageManager": "pnpm@10.11.1"
+    "packageManager": "pnpm@10.11.1",
+    "dependencies": {
+        "cac": "^6.7.14",
+        "chokidar": "^4.0.3"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.6",
+        "tsc-alias": "^1.8.0",
+        "tsx": "^4.2.0",
+        "typescript": "^5.3.3",
+        "vitest": "^1.0.0-rc.28"
+    }
 }
