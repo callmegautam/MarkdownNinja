@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "bin": {
-        "ninja": "./bin/ninja.js"
+        "ninja": "./bin/ninja.ts"
     },
     "homepage": "https://github.com/callmegautam/markdownninja",
     "repository": {
@@ -18,7 +18,7 @@
         "dist"
     ],
     "scripts": {
-        "dev": "tsx --watch ./bin/ninja.ts",
+        "dev": "tsx ./bin/ninja.ts",
         "build": "tsc",
         "clean": "rm -rf dist",
         "test": "vitest run",
