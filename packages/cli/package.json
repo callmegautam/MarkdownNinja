@@ -2,9 +2,9 @@
     "name": "markdownninja-cli",
     "version": "0.1.0",
     "description": "",
-    "main": "index.js",
+    "main": "./dist/bin/ninja.js",
     "bin": {
-        "ninja": "./bin/ninja.ts"
+        "ninja": "./dist/bin/ninja.js"
     },
     "homepage": "https://github.com/callmegautam/markdownninja",
     "repository": {
