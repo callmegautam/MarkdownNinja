@@ -16,7 +16,6 @@ export async function previewCommand(file: string, options: { live?: boolean }) 
 
     let latestHtml = await buildHtml(file, ext);
 
-    // 🧠 Setup a basic server
     const port = 7331;
     const server = createServer((req, res) => {
         if (req.url === "/") {
