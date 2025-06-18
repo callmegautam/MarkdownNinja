@@ -1,4 +1,7 @@
-export function markdownToHtml(markdown: string, options: { allowHtml?: boolean } = { allowHtml: true }): string {
+export function markdownToHtml(
+    markdown: string,
+    options: { allowHtml?: boolean } = { allowHtml: true }
+): string {
     const lines = markdown.split("\n");
     const html: string[] = [];
     let inCodeBlock = false;
@@ -16,7 +19,6 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
         const originalLine = line;
         line = line.trim();
 
-        // Code Block Start/End
         if (/^```/.test(line)) {
             inCodeBlock = !inCodeBlock;
             html.push(inCodeBlock ? "<pre><code>" : "</code></pre>");
@@ -28,14 +30,12 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             continue;
         }
 
-        // Horizontal Rule
         if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
             closeLists();
             html.push("<hr />");
             continue;
         }
 
-        // Headings with IDs
         const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
         if (headingMatch) {
             closeLists();
@@ -50,7 +50,6 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             continue;
         }
 
-        // Blockquote
         const blockquoteMatch = line.match(/^>\s+(.*)/);
         if (blockquoteMatch) {
             closeLists();
@@ -58,7 +57,6 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             continue;
         }
 
-        // Table
         if (/^\|(.+)\|$/.test(line)) {
             const cells = line
                 .split("|")
@@ -84,7 +82,6 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             }
         }
 
-        // Ordered List
         const orderedListMatch = line.match(/^(\s*)(\d+)\.\s+(.*)/);
         if (orderedListMatch) {
             const indent = orderedListMatch[1].length / 2;
@@ -102,7 +99,6 @@ export function markdownToHtml(markdown: string, options: { allowHtml?: boolean 
             continue;
         }
 
-        // Unordered List / Task List
         const unorderedListMatch = line.match(/^(\s*)[-*+]\s+(.*)/);
         if (unorderedListMatch) {
             const indent = unorderedListMatch[1].length / 2;
@@ -168,7 +164,6 @@ function parseInline(text: string, options: { allowHtml?: boolean } = {}): strin
         .replace(/--/g, "–")
         .replace(/\"([^"]*)\"/g, "“$1”")
         .replace(/\b'([^']*)'/g, "‘$1’")
-        // First: Auto-link raw URLs not inside Markdown links
         .replace(/(?<!["'(=])\b(https?:\/\/[^\s<]+[^<.,;"')\]\s])/g, '<a href="$1">$1</a>')
         .replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" />')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')

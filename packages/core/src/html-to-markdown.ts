@@ -8,7 +8,6 @@ export function htmlToMarkdown(html: string, options: { allowHtml?: boolean } = 
     }
     const Node = document.defaultView.Node;
 
-    // const doc = parser.parseFromString(html, "text/html");
     const lines: string[] = [];
 
     if (!document || !document.body) {
